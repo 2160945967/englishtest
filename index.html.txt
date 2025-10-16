@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能英文单词拼写抽查 - 有道API版</title>
+    <style>
+        /* 保持原有样式不变 */
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 30px auto;
+            text-align: center;
+            background-color: #f5f5f5;
+            padding: 20px;
+            position: relative;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .tab-group {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .tab-btn.active {
+            background-color: #3498db;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .lang-select {
+            margin-bottom: 20px;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+        .lang-select select {
+            font-size: 16px;
+            padding: 8px 12px;
+            margin-left: 10px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #wordPos {
+            font-size: 18px;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        .sound-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #3498db;
+            cursor: pointer;
+            margin-left: 10px;
+            padding: 0;
+        }
+        .sound-btn:hover {
+            color: #2980b9;
+            transform: scale(1.1);
+        }
+        .word-display-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 10px 0 25px;
+        }
+        #wordDisplay {
+            font-size: 28px;
+            color: #2c3e50;
+            min-height: 40px;
+        }
+        input, select, textarea {
+            font-size: 16px;
+            padding: 10px 15px;
+            width: 100%;
+            margin-bottom: 15px;
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        #userInput {
+            font-size: 22px;
+            padding: 12px 20px;
+            width: 75%;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .form-row > div {
+            flex: 1;
+        }
+        #tip {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin: 10px 0 20px;
+        }
+        .btn-group {
+            margin: 10px 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            font-size: 16px;
+            padding: 10px 20px;
+            margin: 0 8px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+        #checkBtn, #redoWrongBtn, .btn-success {
+            background-color: #2ecc71;
+            color: white;
+        }
+        #nextBtn, #clearWrongBtn, .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+        #result {
+            font-size: 24px;
+            margin: 20px 0;
+            font-weight: bold;
+        }
+        .correct {
+            color: #2ecc71;
+        }
+        .wrong {
+            color: #e74c3c;
+        }
+        .multiMeanTip {
+            font-size: 14px;
+            color: #3498db;
+            margin-top: 5px;
+        }
+        .word-list, #wrongWordList {
+            list-style: none;
+            padding: 0;
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 20px auto;
+            width: 100%;
+        }
+        .word-list li, #wrongWordList li {
+            padding: 12px;
+            margin: 8px 0;
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            text-align: left;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #wrongWordList li {
+            border-left-color: #e74c3c;
+        }
+        .word-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .word-actions button {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin: 0;
+        }
+        .wrong-word-en, .word-en {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .wrong-word-cn, .word-cn {
+            color: #7f8c8d;
+            margin-left: 10px;
+        }
+        .wrong-word-pos, .word-pos {
+            display: block;
+            color: #95a5a6;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        #exampleSentence, .word-example {
+            font-size: 16px;
+            color: #555;
+            margin-top: 5px;
+            font-style: italic;
+            text-align: left;
+        }
+        #stats {
+            margin: 15px 0;
+            font-size: 16px;
+            color: #666;
+            padding: 8px 15px;
+            background-color: #f0f7ff;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        .library-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .library-selector {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .loading {
+            color: #3498db;
+            font-style: italic;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: white;
+            background-color: #3498db;
+            margin-left: 5px;
+        }
+        
+        /* 汉语意思选项 */
+        .meaning-options {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .meaning-option {
+            padding: 8px 10px;
+            margin: 5px 0;
+            background-color: #f0f7ff;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .meaning-option:hover {
+            background-color: #e1f0fa;
+        }
+        
+        /* 加载动画 */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(52, 152, 219, 0.3);
+            border-radius: 50%;
+            border-top-color: #3498db;
+            animation: spin 1s ease-in-out infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* 网络状态样式 */
+        .network-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .online {
+            background-color: #2ecc71;
+            color: white;
+        }
+        .offline {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        /* 帮助页面样式 */
+        .help-content {
+            text-align: left;
+            line-height: 1.6;
+        }
+        .help-section {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .help-section h3 {
+            color: #3498db;
+            margin-top: 15px;
+        }
+        .help-section ul {
+            margin-left: 20px;
+            padding-left: 10px;
+        }
+        .help-section li {
+            margin-bottom: 8px;
+        }
+        
+        /* 错误提示样式 */
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        
+        /* 重新生成按钮样式 */
+        .regenerate-btn {
+            padding: 5px 10px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+        
+        /* API设置区域 */
+        .api-settings {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        /* 移动端适配 */
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            #userInput {
+                width: 100%;
+            }
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
+            .btn-group {
+                flex-direction: column;
+            }
+            button {
+                min-height: 48px;
+                width: 100%;
+                margin: 5px 0;
+            }
+            .library-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .library-selector {
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+            .network-status {
+                position: static;
+                display: inline-block;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="network-status online" id="networkStatus">在线</div>
+    <div class="container">
+        <h1>智能英文单词拼写抽查</h1>
+        
+        <!-- 新增：有道API设置区域 -->
+        <div class="api-settings">
+            <div class="form-group">
+                <label for="youdaoAppKey">有道API应用ID</label>
+                <input type="text" id="youdaoAppKey" placeholder="请输入有道API的应用ID">
+            </div>
+            <div class="form-group">
+                <label for="youdaoAppSecret">有道API应用密钥</label>
+                <input type="text" id="youdaoAppSecret" placeholder="请输入有道API的应用密钥">
+            </div>
+            <button id="saveApiSettings" class="btn-primary">保存API设置</button>
+            <div class="error-message" id="apiError" style="display: none;">请先设置有道API的应用ID和密钥</div>
+        </div>
+        
+        <div class="tab-group">
+            <button class="tab-btn active" data-tab="practice">正常练习</button>
+            <button class="tab-btn" data-tab="wrong-list">错题本</button>
+            <button class="tab-btn" data-tab="word-management">单词管理</button>
+            <button class="tab-btn" data-tab="help">使用帮助</button>
+        </div>
+
+        <!-- 正常练习页面 -->
+        <div class="tab-content active" id="practice">
+            <div class="form-row">
+                <div class="lang-select">
+                    选择显示语言：
+                    <select id="displayLang" title="选择单词显示模式（中文显示/英文显示）">
+                        <option value="cn">屏幕显示汉语+词性（拼英文）</option>
+                        <option value="en">屏幕显示英语+词性（拼汉语）</option>
+                    </select>
+                </div>
+                <div class="lang-select">
+                    选择题库：
+                     <select id="librarySelector" title="选择要练习的单词题库">
+                        <!-- 动态填充题库 -->
+                    </select>
+                </div>
+            </div>
+            <div id="wordPos"></div>
+            <div class="word-display-container">
+                <div id="wordDisplay">点击"下一个单词"开始</div>
+                <button id="playSoundBtn" class="sound-btn" disabled title="播放单词读音">🔊</button>
+            </div>
+            <div class="multiMeanTip">提示：支持多义词判断，多个释义用逗号或顿号分隔</div>
+            <input type="text" id="userInput" placeholder="请输入对应拼写">
+            <div id="tip">第一次回车确认答案，第二次回车下一题</div>
+            <div id="exampleSentence"></div>
+            <div id="stats">总练习：0 | 正确：0 | 正确率：0%</div>
+            <div class="btn-group">
+                <button id="checkBtn">检查答案</button>
+                <button id="nextBtn">下一个单词</button>
+            </div>
+            <div id="result"></div>
+        </div>
+
+        <!-- 错题本页面 -->
+        <div class="tab-content" id="wrong-list">
+            <h2>我的错题本</h2>
+            <div class="multiMeanTip">点击“重练错题”集中复习，“清空错题”删除所有记录</div>
+            <div class="btn-group">
+                <button id="redoWrongBtn">重练错题</button>
+                <button id="clearWrongBtn">清空错题</button>
+            </div>
+            <ul id="wrongWordList">
+                <li>暂无错题，开始练习吧！</li>
+            </ul>
+        </div>
+
+        <!-- 单词管理页面 -->
+        <div class="tab-content" id="word-management">
+            <h2>单词库管理</h2>
+            
+            <div class="library-controls">
+                <div class="library-selector">
+                    <label for="wordLibrary">当前题库：</label>
+                    <select id="wordLibrary">
+                        <!-- 动态填充题库 -->
+                    </select>
+                </div>
+                <div>
+                    <button id="createLibrary" class="btn-secondary">新建题库</button>
+                    <button id="renameLibrary" class="btn-primary">重命名</button>
+                    <button id="deleteLibrary" class="btn-danger">删除</button>
+                </div>
+            </div>
+            
+            <h3>添加新单词</h3>
+            <form id="wordForm">
+                <div class="form-group">
+                    <label for="englishWord">英文单词/词组</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="englishWord" placeholder="输入英文单词或词组" required>
+                        <button type="button" id="fetchWordInfo" class="btn-primary">获取信息</button>
+                        <button type="button" id="pronounceNewWord" class="sound-btn" disabled title="播放单词读音">🔊</button>
+                    </div>
+                    <div id="meaningLoading" style="display: none; color: #3498db; margin-top: 5px;">
+                        <span class="spinner"></span> 正在从有道API获取单词信息...
+                    </div>
+                    <div id="meaningError" class="error-message" style="display: none;">获取单词信息失败，请检查API设置或手动输入</div>
+                </div>
+                
+                <div class="form-group" id="meaningOptionsContainer" style="display: none;">
+                    <label>请选择单词含义：</label>
+                    <div class="meaning-options" id="meaningOptions">
+                        <!-- 动态填充含义选项 -->
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="partOfSpeech">词性</label>
+                        <select id="partOfSpeech" required>
+                            <option value="n.（名词）">n.（名词）</option>
+                            <option value="v.（动词）">v.（动词）</option>
+                            <option value="adj.（形容词）">adj.（形容词）</option>
+                            <option value="adv.（副词）">adv.（副词）</option>
+                            <option value="prep.（介词）">prep.（介词）</option>
+                            <option value="conj.（连词）">conj.（连词）</option>
+                            <option value="pron.（代词）">pron.（代词）</option>
+                            <option value="——   词组">——   词组</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="phonetic">音标</label>
+                        <input type="text" id="phonetic" placeholder="单词音标">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="chineseMeaning">中文释义</label>
+                    <input type="text" id="chineseMeaning" placeholder="输入中文释义，多个用逗号分隔" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="exampleSentence">例句</label>
+                    <div style="display: flex; gap: 5px;">
+                        <textarea id="exampleSentenceInput" rows="2" placeholder="输入例句，或点击生成按钮"></textarea>
+                        <button type="button" id="generateExample" class="btn-primary regenerate-btn">生成</button>
+                    </div>
+                    <div id="exampleError" class="error-message" style="display: none;">生成例句失败</div>
+                </div>
+                
+                <div class="btn-group">
+                    <button type="submit" class="btn-success">添加单词</button>
+                </div>
+            </form>
+            
+            <h3>当前题库单词列表 <span class="badge" id="wordCount">0</span></h3>
+            <ul class="word-list" id="customWordList">
+                <li>当前题库中没有单词，请添加单词</li>
+            </ul>
+        </div>
+
+        <!-- 使用帮助页面 -->
+        <div class="tab-content" id="help">
+            <h2>使用帮助</h2>
+            <div class="help-content">
+                <div class="help-section">
+                    <h3>软件介绍</h3>
+                    <p>本应用是一款基于有道API的智能英文单词拼写抽查工具，旨在帮助用户有效记忆和掌握英语单词。通过多样化的练习方式和个性化的错题管理，提高单词记忆效率。</p>
+                </div>
+                
+                <div class="help-section">
+                    <h3>有道API设置</h3>
+                    <p>使用前需要先设置有道API的应用ID和密钥，获取方式：</p>
+                    <ol>
+                        <li>访问有道智云官网 (https://ai.youdao.com/)</li>
+                        <li>注册并登录账号</li>
+                        <li>创建应用，选择"词典服务"API</li>
+                        <li>获取应用ID和密钥并填入上方设置区域</li>
+                    </ol>
+                </div>
+                
+                <div class="help-section">
+                    <h3>使用方法</h3>
+                    <ul>
+                        <li><strong>正常练习</strong>：选择显示模式（看中文拼英文或看英文拼中文）和题库，点击"下一个单词"开始练习，输入答案后点击"检查答案"或按回车键验证</li>
+                        <li><strong>错题复习</strong>：在"错题本"页面可以查看所有答错的单词，点击"重练错题"可以集中复习这些单词</li>
+                        <li><strong>单词管理</strong>：可以创建多个题库，添加、删除单词，系统会通过有道API自动获取单词的发音、释义和例句</li>
+                    </ul>
+                </div>
+                
+                <div class="help-section">
+                    <h3>功能特点</h3>
+                    <ul>
+                        <li>支持双向练习模式（中译英和英译中）</li>
+                        <li>基于有道API的智能发音功能，帮助学习正确读音</li>
+                        <li>多题库管理，可按不同场景或难度分类</li>
+                        <li>错题自动记录和集中复习</li>
+                        <li>通过有道API自动获取单词释义、音标和例句</li>
+                        <li>支持多义词判断，多个释义用逗号或顿号分隔</li>
+                        <li>学习统计功能，记录练习情况和正确率</li>
+                        <li>支持添加单词和词组</li>
+                    </ul>
+                </div>
+                
+                <div class="help-section">
+                    <h3>注意事项</h3>
+                    <ul>
+                        <li>单词释义、音标和例句的获取需要有道API支持和联网</li>
+                        <li>发音功能同时支持有道API发音和浏览器语音合成</li>
+                        <li>多义词输入时，多个释义用逗号或顿号分隔即可</li>
+                        <li>所有数据保存在本地，清除浏览器数据会导致单词库和学习记录丢失</li>
+                        <li>有道API有调用次数限制，请合理使用</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 有道API配置 - 从本地存储加载
+        let youdaoConfig = {
+            appKey: "",
+            appSecret: ""
+        };
+        
+        // 初始化数据结构
+        let wordLibraries = {
+            "default": {
+                name: "默认题库",
+                words: [
+                    { 
+                        en: "apple", 
+                        phonetic: "/ˈæpl/", 
+                        pos: "n.（名词）", 
+                        cn: ["苹果"],
+                        examples: ["An apple a day keeps the doctor away."],
+                        id: "1-default",
+                        errorCount: 0,
+                        correctCount: 0
+                    },
+                    { 
+                        en: "book", 
+                        phonetic: "/bʊk/", 
+                        pos: "n.（名词）", 
+                        cn: ["书籍", "书"],
+                        examples: ["I bought a new book yesterday."],
+                        id: "2-default",
+                        errorCount: 0,
+                        correctCount: 0
+                    },
+                    { 
+                        en: "book", 
+                        phonetic: "/bʊk/", 
+                        pos: "v.（动词）", 
+                        cn: ["预定", "预订"],
+                        examples: ["I need to book a hotel room for my trip."],
+                        id: "3-default",
+                        errorCount: 0,
+                        correctCount: 0
+                    }
+                ]
+            }
+        };
+        
+        // 当前选中的题库
+        let currentLibraryId = "default";
+        
+        // 状态管理
+        let shuffledWordPool = [];
+        let currentWord = null;
+        let isAnswerChecked = false;
+        let displayLang = "cn";
+        let wrongWordList = [];
+        let isRedoWrongMode = false;
+        let totalCount = 0;
+        let correctCount = 0;
+        let meaningSuggestions = []; // 存储单词含义建议
+        
+        // DOM元素
+        const elements = {
+            // 新增：API设置元素
+            youdaoAppKey: document.getElementById("youdaoAppKey"),
+            youdaoAppSecret: document.getElementById("youdaoAppSecret"),
+            saveApiSettings: document.getElementById("saveApiSettings"),
+            apiError: document.getElementById("apiError"),
+            fetchWordInfo: document.getElementById("fetchWordInfo"),
+            
+            // 公共元素
+            tabBtns: document.querySelectorAll(".tab-btn"),
+            tabContents: document.querySelectorAll(".tab-content"),
+            networkStatus: document.getElementById("networkStatus"),
+            
+            // 练习页面元素
+            displayLang: document.getElementById("displayLang"),
+            wordPos: document.getElementById("wordPos"),
+            wordDisplay: document.getElementById("wordDisplay"),
+            playSoundBtn: document.getElementById("playSoundBtn"),
+            userInput: document.getElementById("userInput"),
+            result: document.getElementById("result"),
+            checkBtn: document.getElementById("checkBtn"),
+            nextBtn: document.getElementById("nextBtn"),
+            tip: document.getElementById("tip"),
+            exampleSentence: document.getElementById("exampleSentence"),
+            wrongWordList: document.getElementById("wrongWordList"),
+            redoWrongBtn: document.getElementById("redoWrongBtn"),
+            clearWrongBtn: document.getElementById("clearWrongBtn"),
+            stats: document.getElementById("stats"),
+            librarySelector: document.getElementById("librarySelector"),
+            
+            // 单词管理页面元素
+            wordLibrary: document.getElementById("wordLibrary"),
+            createLibrary: document.getElementById("createLibrary"),
+            renameLibrary: document.getElementById("renameLibrary"),
+            deleteLibrary: document.getElementById("deleteLibrary"),
+            wordForm: document.getElementById("wordForm"),
+            englishWord: document.getElementById("englishWord"),
+            partOfSpeech: document.getElementById("partOfSpeech"),
+            chineseMeaning: document.getElementById("chineseMeaning"),
+            exampleSentenceInput: document.getElementById("exampleSentenceInput"),
+            generateExample: document.getElementById("generateExample"),
+            customWordList: document.getElementById("customWordList"),
+            wordCount: document.getElementById("wordCount"),
+            phonetic: document.getElementById("phonetic"),
+            pronounceNewWord: document.getElementById("pronounceNewWord"),
+            meaningLoading: document.getElementById("meaningLoading"),
+            meaningOptionsContainer: document.getElementById("meaningOptionsContainer"),
+            meaningOptions: document.getElementById("meaningOptions"),
+            meaningError: document.getElementById("meaningError"),
+            exampleError: document.getElementById("exampleError")
+        };
+
+        // 初始化函数
+        function init() {
+            try {
+                // 加载API配置
+                loadApiSettings();
+                // 加载数据
+                DataManager.load();
+                // 渲染UI
+                Renderer.renderLibrarySelectors();
+                Renderer.renderWordList();
+                updateWordCount();
+                updateStats();
+                // 设置事件监听
+                setupEventListeners();
+                // 更新网络状态
+                updateNetworkStatus();
+            } catch (error) {
+                console.error("初始化失败:", error);
+                alert("应用初始化失败，请刷新页面重试");
+            }
+        }
+
+        // 更新网络状态显示
+        function updateNetworkStatus() {
+            if (navigator.onLine) {
+                elements.networkStatus.textContent = "在线";
+                elements.networkStatus.className = "network-status online";
+            } else {
+                elements.networkStatus.textContent = "离线";
+                elements.networkStatus.className = "network-status offline";
+            }
+        }
+
+        // 有道API工具函数
+        const YoudaoAPI = {
+            // 检查API配置是否完整
+            isConfigured() {
+                return !!youdaoConfig.appKey && !!youdaoConfig.appSecret;
+            },
+            
+            // 生成签名
+            generateSign(q, salt, appKey, appSecret) {
+                return CryptoJS.MD5(appKey + q + salt + appSecret).toString();
+            },
+            
+            // 获取单词详情
+            async getWordDetail(word) {
+                if (!this.isConfigured()) {
+                    elements.apiError.style.display = "block";
+                    return null;
+                }
+                
+                const q = word.trim();
+                const salt = new Date().getTime();
+                const sign = this.generateSign(q, salt, youdaoConfig.appKey, youdaoConfig.appSecret);
+                
+                try {
+                    const response = await fetch(`https://openapi.youdao.com/api`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: new URLSearchParams({
+                            q: q,
+                            from: 'EN',
+                            to: 'zh-CHS',
+                            appKey: youdaoConfig.appKey,
+                            salt: salt.toString(),
+                            sign: sign,
+                            signType: 'v3',
+                            curtime: Math.round(new Date().getTime() / 1000).toString()
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    // 处理有道API返回结果
+                    if (data.errorCode !== '0') {
+                        console.error('有道API错误:', data.errorCode, this.getErrorMsg(data.errorCode));
+                        elements.meaningError.textContent = `API错误: ${this.getErrorMsg(data.errorCode)}`;
+                        elements.meaningError.style.display = "block";
+                        return null;
+                    }
+                    
+                    return this.parseWordData(data, word);
+                } catch (error) {
+                    console.error('获取单词信息失败:', error);
+                    elements.meaningError.textContent = "网络错误，无法获取单词信息";
+                    elements.meaningError.style.display = "block";
+                    return null;
+                }
+            },
+            
+            // 解析有道API返回的数据
+            parseWordData(data, originalWord) {
+                const result = {
+                    word: originalWord,
+                    phonetic: '',
+                    parts: [],
+                    examples: []
+                };
+                
+                // 提取音标
+                if (data.basic && data.basic.phonetic) {
+                    result.phonetic = `/${data.basic.phonetic}/`;
+                }
+                
+                // 提取释义
+                if (data.basic && data.basic.explains) {
+                    data.basic.explains.forEach(explain => {
+                        // 简单解析词性和释义
+                        const posMatch = explain.match(/^([a-zA-Z.]+)\s+(.*)/);
+                        if (posMatch) {
+                            const pos = this.convertPos(posMatch[1]);
+                            const meaning = posMatch[2];
+                            result.parts.push({ pos, meaning });
+                        } else {
+                            result.parts.push({ pos: '', meaning: explain });
+                        }
+                    });
+                }
+                
+                // 提取例句
+                if (data.web) {
+                    data.web.forEach(item => {
+                        if (item.value && item.value.length > 0) {
+                            result.examples.push({
+                                en: item.key,
+                                cn: item.value.join('；')
+                            });
+                        }
+                    });
+                }
+                
+                return result;
+            },
+            
+            // 转换词性缩写为中文显示
+            convertPos(pos) {
+                const posMap = {
+                    'n.': 'n.（名词）',
+                    'v.': 'v.（动词）',
+                    'adj.': 'adj.（形容词）',
+                    'adv.': 'adv.（副词）',
+                    'prep.': 'prep.（介词）',
+                    'conj.': 'conj.（连词）',
+                    'pron.': 'pron.（代词）',
+                    'num.': 'num.（数词）',
+                    'int.': 'int.（感叹词）'
+                };
+                return posMap[pos] || pos;
+            },
+            
+            // 获取错误信息
+            getErrorMsg(errorCode) {
+                const errorMap = {
+                    '101': '缺少必填的参数',
+                    '102': '不支持的语言类型',
+                    '103': '翻译文本过长',
+                    '104': '不支持的API类型',
+                    '105': '不支持的签名类型',
+                    '106': '不支持的响应格式',
+                    '107': '不支持的加密类型',
+                    '108': 'appKey无效',
+                    '109': 'batchLog格式不正确',
+                    '110': '无相关服务的有效实例',
+                    '111': '开发者账号无效',
+                    '112': '请求服务无效',
+                    '113': 'q不能为空',
+                    '201': '解密失败',
+                    '202': '签名检验失败',
+                    '203': '访问IP地址不在可访问IP列表中',
+                    '204': '请求的接口与应用的平台类型不一致',
+                    '301': '辞典查询失败',
+                    '302': '翻译查询失败',
+                    '303': '服务端的其它异常',
+                    '401': '账户已经欠费',
+                    '402': 'offline参数有误'
+                };
+                return errorMap[errorCode] || `未知错误(${errorCode})`;
+            },
+            
+            // 获取单词发音URL
+            getPronunciationUrl(word) {
+                if (!this.isConfigured()) return null;
+                // 有道发音URL格式
+                return `https://dict.youdao.com/dictvoice?type=2&audio=${encodeURIComponent(word)}`;
+            }
+        };
+
+        // 数据管理模块
+        const DataManager = {
+            load: () => {
+                try {
+                    const savedLibraries = localStorage.getItem("wordLibraries");
+                    const savedWrongWords = localStorage.getItem("wrongWordList");
+                    const savedStats = localStorage.getItem("practiceStats");
+                    
+                    if (savedLibraries) {
+                        wordLibraries = JSON.parse(savedLibraries);
+                    }
+                    
+                    if (savedWrongWords) {
+                        wrongWordList = JSON.parse(savedWrongWords);
+                        Renderer.renderWrongWords();
+                    }
+                    
+                    if (savedStats) {
+                        const stats = JSON.parse(savedStats);
+                        totalCount = stats.totalCount || 0;
+                        correctCount = stats.correctCount || 0;
+                    }
+                } catch (e) {
+                    console.error("加载数据失败:", e);
+                    alert("加载保存的数据失败，将使用默认数据");
+                }
+            },
+            
+            save: () => {
+                try {
+                    localStorage.setItem("wordLibraries", JSON.stringify(wordLibraries));
+                    localStorage.setItem("wrongWordList", JSON.stringify(wrongWordList));
+                    localStorage.setItem("practiceStats", JSON.stringify({
+                        totalCount,
+                        correctCount
+                    }));
+                } catch (e) {
+                    console.error("保存数据失败:", e);
+                    alert("数据保存失败，可能是存储空间不足。建议导出备份。");
+                }
+            },
+            
+            addWord: (word) => {
+                if (!wordLibraries[currentLibraryId].words) {
+                    wordLibraries[currentLibraryId].words = [];
+                }
+                wordLibraries[currentLibraryId].words.push(word);
+                DataManager.save();
+            },
+            
+            deleteWord: (wordId) => {
+                if (wordLibraries[currentLibraryId].words) {
+                    wordLibraries[currentLibraryId].words = wordLibraries[currentLibraryId].words
+                        .filter(word => word.id !== wordId);
+                    DataManager.save();
+                }
+            },
+            
+            updateWordStats: (wordId, isCorrect) => {
+                const library = wordLibraries[currentLibraryId];
+                if (library && library.words) {
+                    const wordIndex = library.words.findIndex(word => word.id === wordId);
+                    if (wordIndex !== -1) {
+                        if (isCorrect) {
+                            library.words[wordIndex].correctCount = (library.words[wordIndex].correctCount || 0) + 1;
+                        } else {
+                            library.words[wordIndex].errorCount = (library.words[wordIndex].errorCount || 0) + 1;
+                        }
+                        DataManager.save();
+                    }
+                }
+            }
+        };
+
+        // 渲染模块
+        const Renderer = {
+            renderLibrarySelectors: () => {
+                try {
+                    const fragment1 = document.createDocumentFragment();
+                    const fragment2 = document.createDocumentFragment();
+
+                    Object.keys(wordLibraries).forEach(libraryId => {
+                        const library = wordLibraries[libraryId];
+
+                        // 练习页面的题库选择器
+                        const option1 = document.createElement("option");
+                        option1.value = libraryId;
+                        option1.textContent = library.name;
+                        if (libraryId === currentLibraryId) {
+                            option1.selected = true;
+                        }
+                        fragment1.appendChild(option1);
+
+                        // 单词管理页面的题库选择器
+                        const option2 = document.createElement("option");
+                        option2.value = libraryId;
+                        option2.textContent = library.name;
+                        if (libraryId === currentLibraryId) {
+                            option2.selected = true;
+                        }
+                        fragment2.appendChild(option2);
+                    });
+
+                    elements.librarySelector.innerHTML = "";
+                    elements.librarySelector.appendChild(fragment1);
+
+                    elements.wordLibrary.innerHTML = "";
+                    elements.wordLibrary.appendChild(fragment2);
+
+                    // 重新初始化单词池
+                    initWordPool();
+                } catch (error) {
+                    console.error("渲染题库选择器失败:", error);
+                }
+            },
+            
+            renderWordList: () => {
+                try {
+                    const library = wordLibraries[currentLibraryId];
+                    const fragment = document.createDocumentFragment();
+                    
+                    if (!library || !library.words || library.words.length === 0) {
+                        const li = document.createElement('li');
+                        li.textContent = '当前题库中没有单词，请添加单词';
+                        fragment.appendChild(li);
+                    } else {
+                        library.words.forEach(word => {
+                            const li = document.createElement('li');
+                            
+                            // 根据错误率显示不同颜色
+                            let difficultyClass = '';
+                            if (word.errorCount > 0) {
+                                const errorRate = word.errorCount / (word.errorCount + (word.correctCount || 1));
+                                if (errorRate > 0.7) {
+                                    difficultyClass = 'style="color: #e74c3c;"';
+                                } else if (errorRate > 0.3) {
+                                    difficultyClass = 'style="color: #f39c12;"';
+                                }
+                            }
+                            
+                            li.innerHTML = `
+                                <div>
+                                    <span class="word-en" ${difficultyClass}>${word.en}</span>
+                                    <span class="word-pos">${word.pos} ${word.phonetic}</span>
+                                    <span class="word-cn">${word.cn.join("、")}</span>
+                                    <div class="word-example">${word.examples[0]}</div>
+                                </div>
+                                <div class="word-actions">
+                                    <button class="btn-primary play-word-sound" data-word="${word.en}">🔊</button>
+                                    <button class="btn-danger delete-word" data-id="${word.id}">删除</button>
+                                </div>
+                            `;
+                            fragment.appendChild(li);
+                        });
+                    }
+                    
+                    elements.customWordList.innerHTML = '';
+                    elements.customWordList.appendChild(fragment);
+                    
+                    // 添加事件监听
+                    document.querySelectorAll('.play-word-sound').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const word = this.getAttribute('data-word');
+                            playWordSound(word);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.delete-word').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const wordId = this.getAttribute('data-id');
+                            if (confirm('确定要删除这个单词吗？')) {
+                                DataManager.deleteWord(wordId);
+                                Renderer.renderWordList();
+                                updateWordCount();
+                            }
+                        });
+                    });
+                } catch (error) {
+                    console.error("渲染单词列表失败:", error);
+                }
+            },
+            
+            renderWrongWords: () => {
+                try {
+                    const fragment = document.createDocumentFragment();
+                    
+                    if (wrongWordList.length === 0) {
+                        const li = document.createElement('li');
+                        li.textContent = '暂无错题，开始练习吧！';
+                        fragment.appendChild(li);
+                    } else {
+                        // 去重并保持顺序
+                        const uniqueWrongWords = [];
+                        wrongWordList.forEach(word => {
+                            if (!uniqueWrongWords.some(w => w.id === word.id)) {
+                                uniqueWrongWords.push(word);
+                            }
+                        });
+                        
+                        uniqueWrongWords.forEach(word => {
+                            const li = document.createElement('li');
+                            li.innerHTML = `
+                                <div>
+                                    <span class="wrong-word-en">${word.en}</span>
+                                    <span class="wrong-word-pos">${word.pos} ${word.phonetic}</span>
+                                    <span class="wrong-word-cn">${word.cn.join("、")}</span>
+                                </div>
+                                <div class="word-actions">
+                                    <button class="btn-primary play-word-sound" data-word="${word.en}">🔊</button>
+                                    <button class="btn-danger remove-wrong-word" data-id="${word.id}">移除</button>
+                                </div>
+                            `;
+                            fragment.appendChild(li);
+                        });
+                    }
+                    
+                    elements.wrongWordList.innerHTML = '';
+                    elements.wrongWordList.appendChild(fragment);
+                    
+                    // 添加事件监听
+                    document.querySelectorAll('.play-word-sound').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const word = this.getAttribute('data-word');
+                            playWordSound(word);
+                        });
+                    });
+                    
+                    document.querySelectorAll('.remove-wrong-word').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const wordId = this.getAttribute('data-id');
+                            wrongWordList = wrongWordList.filter(word => word.id !== wordId);
+                            DataManager.save();
+                            Renderer.renderWrongWords();
+                        });
+                    });
+                } catch (error) {
+                    console.error("渲染错题列表失败:", error);
+                }
+            },
+            
+            // 显示当前单词
+            displayCurrentWord() {
+                if (!currentWord) return;
+                
+                elements.playSoundBtn.disabled = false;
+                
+                if (displayLang === 'cn') {
+                    // 显示中文，需要拼写英文
+                    elements.wordDisplay.textContent = currentWord.cn.join('、');
+                    elements.wordPos.textContent = currentWord.pos;
+                } else {
+                    // 显示英文，需要拼写中文
+                    elements.wordDisplay.textContent = currentWord.en;
+                    elements.wordPos.textContent = `${currentWord.pos} ${currentWord.phonetic}`;
+                }
+                
+                // 显示例句
+                if (currentWord.examples && currentWord.examples.length > 0) {
+                    elements.exampleSentence.textContent = `例句: ${currentWord.examples[0]}`;
+                } else {
+                    elements.exampleSentence.textContent = '';
+                }
+                
+                elements.userInput.value = '';
+                elements.result.textContent = '';
+                elements.userInput.focus();
+                isAnswerChecked = false;
+            }
+        };
+
+        // 初始化单词池
+        function initWordPool() {
+            const library = wordLibraries[currentLibraryId];
+            if (library && library.words && library.words.length > 0) {
+                // 复制单词数组并打乱顺序
+                shuffledWordPool = [...library.words];
+                shuffleArray(shuffledWordPool);
+            } else {
+                shuffledWordPool = [];
+            }
+        }
+
+        // 打乱数组顺序
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // 获取下一个单词
+        function getNextWord() {
+            if (isRedoWrongMode && wrongWordList.length > 0) {
+                // 重练错题模式
+                const randomIndex = Math.floor(Math.random() * wrongWordList.length);
+                currentWord = wrongWordList[randomIndex];
+            } else {
+                // 正常模式
+                if (shuffledWordPool.length === 0) {
+                    initWordPool();
+                }
+                currentWord = shuffledWordPool.pop();
+            }
+            
+            if (currentWord) {
+                Renderer.displayCurrentWord();
+            } else {
+                elements.wordDisplay.textContent = "没有可用单词，请先添加单词到当前题库";
+                elements.wordPos.textContent = "";
+                elements.exampleSentence.textContent = "";
+                elements.playSoundBtn.disabled = true;
+            }
+        }
+
+        // 检查答案
+        function checkAnswer() {
+            if (!currentWord || isAnswerChecked) return;
+            
+            const userAnswer = elements.userInput.value.trim().toLowerCase();
+            let isCorrect = false;
+            
+            if (displayLang === 'cn') {
+                // 检查英文拼写
+                isCorrect = userAnswer === currentWord.en.toLowerCase();
+            } else {
+                // 检查中文释义
+                const userAnswers = userAnswer.split(/[,，、;；]/).map(a => a.trim());
+                const correctAnswers = currentWord.cn.map(c => c.trim().toLowerCase());
+                
+                // 只要有一个匹配就认为正确
+                isCorrect = userAnswers.some(ans => correctAnswers.includes(ans));
+            }
+            
+            // 更新结果显示
+            if (isCorrect) {
+                elements.result.textContent = `正确！答案是 ${displayLang === 'cn' ? currentWord.en : currentWord.cn.join('、')}`;
+                elements.result.className = 'correct';
+                correctCount++;
+                
+                // 如果在重练错题模式且答案正确，从错题中移除
+                if (isRedoWrongMode) {
+                    wrongWordList = wrongWordList.filter(word => word.id !== currentWord.id);
+                    Renderer.renderWrongWords();
+                }
+                
+                DataManager.updateWordStats(currentWord.id, true);
+            } else {
+                elements.result.textContent = `错误！正确答案是 ${displayLang === 'cn' ? currentWord.en : currentWord.cn.join('、')}`;
+                elements.result.className = 'wrong';
+                
+                // 添加到错题本（去重）
+                if (!wrongWordList.some(word => word.id === currentWord.id)) {
+                    wrongWordList.push(currentWord);
+                    Renderer.renderWrongWords();
+                }
+                
+                DataManager.updateWordStats(currentWord.id, false);
+            }
+            
+            totalCount++;
+            updateStats();
+            isAnswerChecked = true;
+            DataManager.save();
+        }
+
+        // 播放单词发音
+        function playWordSound(word) {
+            if (!word) return;
+            
+            // 优先使用有道API发音
+            const audioUrl = YoudaoAPI.getPronunciationUrl(word);
+            if (audioUrl) {
+                const audio = new Audio(audioUrl);
+                audio.play().catch(error => {
+                    console.error('播放有道发音失败，尝试浏览器语音合成:', error);
+                    fallbackSpeechSynthesis(word);
+                });
+            } else {
+                // 降级使用浏览器语音合成
+                fallbackSpeechSynthesis(word);
+            }
+        }
+
+        // 浏览器语音合成降级方案
+        function fallbackSpeechSynthesis(word) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                speechSynthesis.speak(utterance);
+            } else {
+                alert('您的浏览器不支持语音合成功能');
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+            elements.stats.textContent = `总练习：${totalCount} | 正确：${correctCount} | 正确率：${accuracy}%`;
+        }
+
+        // 更新单词计数
+        function updateWordCount() {
+            const library = wordLibraries[currentLibraryId];
+            const count = library && library.words ? library.words.length : 0;
+            elements.wordCount.textContent = count;
+        }
+
+        // 从有道API获取单词信息并填充表单
+        async function fetchAndFillWordInfo() {
+            const word = elements.englishWord.value.trim();
+            if (!word) {
+                alert('请输入英文单词');
+                return;
+            }
+            
+            if (!YoudaoAPI.isConfigured()) {
+                elements.apiError.style.display = "block";
+                return;
+            }
+            
+            // 显示加载状态
+            elements.meaningLoading.style.display = "block";
+            elements.meaningError.style.display = "none";
+            elements.meaningOptionsContainer.style.display = "none";
+            
+            // 调用有道API获取单词信息
+            const wordData = await YoudaoAPI.getWordDetail(word);
+            
+            // 隐藏加载状态
+            elements.meaningLoading.style.display = "none";
+            
+            if (wordData && wordData.parts.length > 0) {
+                // 填充音标
+                elements.phonetic.value = wordData.phonetic || '';
+                
+                // 显示含义选项
+                meaningSuggestions = wordData.parts;
+                elements.meaningOptions.innerHTML = '';
+                
+                wordData.parts.forEach((part, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'meaning-option';
+                    div.innerHTML = `<strong>${part.pos}</strong> ${part.meaning}`;
+                    div.addEventListener('click', () => {
+                        // 选中该含义
+                        elements.partOfSpeech.value = part.pos || '——   词组';
+                        elements.chineseMeaning.value = part.meaning;
+                        
+                        // 高亮选中项
+                        document.querySelectorAll('.meaning-option').forEach(el => {
+                            el.style.backgroundColor = '#f0f7ff';
+                        });
+                        div.style.backgroundColor = '#e1f0fa';
+                    });
+                    elements.meaningOptions.appendChild(div);
+                });
+                
+                elements.meaningOptionsContainer.style.display = "block";
+                
+                // 自动填充第一个含义
+                if (wordData.parts[0]) {
+                    elements.partOfSpeech.value = wordData.parts[0].pos || '——   词组';
+                    elements.chineseMeaning.value = wordData.parts[0].meaning;
+                    if (elements.meaningOptions.firstChild) {
+                        elements.meaningOptions.firstChild.style.backgroundColor = '#e1f0fa';
+                    }
+                }
+                
+                // 填充例句
+                if (wordData.examples && wordData.examples.length > 0) {
+                    elements.exampleSentenceInput.value = wordData.examples[0].en || '';
+                }
+                
+                // 启用发音按钮
+                elements.pronounceNewWord.disabled = false;
+            } else {
+                elements.meaningError.style.display = "block";
+                elements.pronounceNewWord.disabled = false; // 即使没有释义也允许发音
+            }
+        }
+
+        // 保存API设置
+        function saveApiSettings() {
+            const appKey = elements.youdaoAppKey.value.trim();
+            const appSecret = elements.youdaoAppSecret.value.trim();
+            
+            if (!appKey || !appSecret) {
+                alert('请输入完整的应用ID和密钥');
+                return;
+            }
+            
+            youdaoConfig.appKey = appKey;
+            youdaoConfig.appSecret = appSecret;
+            
+            localStorage.setItem('youdaoApiConfig', JSON.stringify(youdaoConfig));
+            alert('API设置已保存');
+            elements.apiError.style.display = "none";
+        }
+
+        // 加载API设置
+        function loadApiSettings() {
+            const savedConfig = localStorage.getItem('youdaoApiConfig');
+            if (savedConfig) {
+                try {
+                    youdaoConfig = JSON.parse(savedConfig);
+                    elements.youdaoAppKey.value = youdaoConfig.appKey || '';
+                    elements.youdaoAppSecret.value = youdaoConfig.appSecret || '';
+                } catch (e) {
+                    console.error('加载API配置失败:', e);
+                }
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 标签页切换
+            elements.tabBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tabId = btn.getAttribute('data-tab');
+                    
+                    // 更新按钮状态
+                    elements.tabBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // 更新内容显示
+                    elements.tabContents.forEach(content => {
+                        content.classList.remove('active');
+                    });
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // 网络状态变化监听
+            window.addEventListener('online', updateNetworkStatus);
+            window.addEventListener('offline', updateNetworkStatus);
+            
+            // 练习页面事件
+            elements.checkBtn.addEventListener('click', checkAnswer);
+            elements.nextBtn.addEventListener('click', getNextWord);
+            elements.playSoundBtn.addEventListener('click', () => {
+                if (currentWord) {
+                    playWordSound(currentWord.en);
+                }
+            });
+            
+            // 输入框回车事件
+            elements.userInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    if (isAnswerChecked) {
+                        getNextWord();
+                    } else {
+                        checkAnswer();
+                    }
+                }
+            });
+            
+            // 显示语言切换
+            elements.displayLang.addEventListener('change', (e) => {
+                displayLang = e.target.value;
+                if (currentWord) {
+                    Renderer.displayCurrentWord();
+                }
+            });
+            
+            // 题库切换
+            elements.librarySelector.addEventListener('change', (e) => {
+                currentLibraryId = e.target.value;
+                elements.wordLibrary.value = currentLibraryId;
+                initWordPool();
+                getNextWord();
+            });
+            
+            elements.wordLibrary.addEventListener('change', (e) => {
+                currentLibraryId = e.target.value;
+                elements.librarySelector.value = currentLibraryId;
+                Renderer.renderWordList();
+                updateWordCount();
+                initWordPool();
+            });
+            
+            // 错题本事件
+            elements.redoWrongBtn.addEventListener('click', () => {
+                if (wrongWordList.length === 0) {
+                    alert('没有错题可以练习');
+                    return;
+                }
+                
+                isRedoWrongMode = true;
+                getNextWord();
+                // 切换到练习标签
+                elements.tabBtns.forEach(b => b.classList.remove('active'));
+                document.querySelector('.tab-btn[data-tab="practice"]').classList.add('active');
+                elements.tabContents.forEach(content => content.classList.remove('active'));
+                document.getElementById('practice').classList.add('active');
+                
+                elements.tip.textContent = '正在重练错题模式 - 第一次回车确认答案，第二次回车下一题';
+            });
+            
+            elements.clearWrongBtn.addEventListener('click', () => {
+                if (confirm('确定要清空所有错题记录吗？')) {
+                    wrongWordList = [];
+                    DataManager.save();
+                    Renderer.renderWrongWords();
+                }
+            });
+            
+            // 单词管理事件
+            elements.createLibrary.addEventListener('click', () => {
+                const libraryName = prompt('请输入新题库名称:');
+                if (libraryName && libraryName.trim()) {
+                    const libraryId = 'lib_' + Date.now();
+                    wordLibraries[libraryId] = {
+                        name: libraryName.trim(),
+                        words: []
+                    };
+                    currentLibraryId = libraryId;
+                    DataManager.save();
+                    Renderer.renderLibrarySelectors();
+                    Renderer.renderWordList();
+                    updateWordCount();
+                }
+            });
+            
+            elements.renameLibrary.addEventListener('click', () => {
+                if (currentLibraryId === 'default') {
+                    alert('默认题库不能重命名');
+                    return;
+                }
+                
+                const newName = prompt('请输入新的题库名称:', wordLibraries[currentLibraryId].name);
+                if (newName && newName.trim() && newName.trim() !== wordLibraries[currentLibraryId].name) {
+                    wordLibraries[currentLibraryId].name = newName.trim();
+                    DataManager.save();
+                    Renderer.renderLibrarySelectors();
+                }
+            });
+            
+            elements.deleteLibrary.addEventListener('click', () => {
+                if (currentLibraryId === 'default') {
+                    alert('默认题库不能删除');
+                    return;
+                }
+                
+                if (confirm(`确定要删除"${wordLibraries[currentLibraryId].name}"吗？所有单词将被永久删除。`)) {
+                    delete wordLibraries[currentLibraryId];
+                    currentLibraryId = 'default';
+                    DataManager.save();
+                    Renderer.renderLibrarySelectors();
+                    Renderer.renderWordList();
+                    updateWordCount();
+                }
+            });
+            
+            // 单词表单提交
+            elements.wordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                const enWord = elements.englishWord.value.trim();
+                const pos = elements.partOfSpeech.value;
+                const cnMeaning = elements.chineseMeaning.value.trim();
+                const phonetic = elements.phonetic.value.trim();
+                const example = elements.exampleSentenceInput.value.trim();
+                
+                if (!enWord || !cnMeaning) {
+                    alert('请填写英文单词和中文释义');
+                    return;
+                }
+                
+                // 创建新单词对象
+                const newWord = {
+                    en: enWord,
+                    phonetic: phonetic,
+                    pos: pos,
+                    cn: cnMeaning.split(/[,，、;；]/).map(m => m.trim()),
+                    examples: example ? [example] : [],
+                    id: `${Date.now()}-${currentLibraryId}`,
+                    errorCount: 0,
+                    correctCount: 0
+                };
+                
+                // 添加到题库
+                DataManager.addWord(newWord);
+                
+                // 刷新列表
+                Renderer.renderWordList();
+                updateWordCount();
+                
+                // 重置表单
+                elements.wordForm.reset();
+                elements.meaningOptionsContainer.style.display = "none";
+                elements.pronounceNewWord.disabled = true;
+                
+                alert('单词添加成功');
+            });
+            
+            // 生成例句按钮
+            elements.generateExample.addEventListener('click', async () => {
+                const word = elements.englishWord.value.trim();
+                if (!word) {
+                    alert('请先输入英文单词');
+                    return;
+                }
+                
+                if (!YoudaoAPI.isConfigured()) {
+                    elements.apiError.style.display = "block";
+                    return;
+                }
+                
+                elements.exampleError.style.display = "none";
+                
+                try {
+                    elements.generateExample.disabled = true;
+                    elements.generateExample.textContent = "生成中...";
+                    
+                    // 使用有道API获取例句
+                    const wordData = await YoudaoAPI.getWordDetail(word);
+                    
+                    if (wordData && wordData.examples && wordData.examples.length > 0) {
+                        elements.exampleSentenceInput.value = wordData.examples[0].en;
+                    } else {
+                        elements.exampleError.textContent = "未能获取到例句，请手动输入";
+                        elements.exampleError.style.display = "block";
+                    }
+                } catch (error) {
+                    console.error('生成例句失败:', error);
+                    elements.exampleError.textContent = "生成例句失败，请重试";
+                    elements.exampleError.style.display = "block";
+                } finally {
+                    elements.generateExample.disabled = false;
+                    elements.generateExample.textContent = "生成";
+                }
+            });
+            
+            // 发音按钮事件
+            elements.pronounceNewWord.addEventListener('click', () => {
+                const word = elements.englishWord.value.trim();
+                if (word) {
+                    playWordSound(word);
+                }
+            });
+            
+            // 获取单词信息按钮
+            elements.fetchWordInfo.addEventListener('click', fetchAndFillWordInfo);
+            
+            // API设置保存按钮
+            elements.saveApiSettings.addEventListener('click', saveApiSettings);
+        }
+
+        // 页面加载完成后初始化
+        window.addEventListener('DOMContentLoaded', () => {
+            // 加载CryptoJS用于生成有道API签名
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/crypto-js@4.1.1/crypto-js.min.js';
+            script.onload = init;
+            document.head.appendChild(script);
+        });
+    </script>
+</body>
+</html>
